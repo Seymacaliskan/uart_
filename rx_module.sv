@@ -48,11 +48,11 @@ module rx_module#(
   reg [3:0] clk_count_databit;
   reg [3:0] clk_count_stopbit;
 
-  // Baud hýzý sayaçlarý
+  // Baud hizi sayaclari
   reg [BAUD_DIV_MAX-1:0] baud_cnt_rx;
   reg baud_pulse_rx;
 
-  // Kenar algýlama için sayaçlarý sýfýrla
+  // Kenar algilama icin sayaclarý sifirladik
   always @(posedge clk) begin
     if (rst) begin
       clk_count_startbit <= 0;
@@ -62,7 +62,7 @@ module rx_module#(
     end
   end
 
-  // Baud hýzý güncelle
+  // Baud hizi guncelledik
   always @(posedge clk) begin
     if (rst) begin
       baud_cnt_rx <= 0;
@@ -79,7 +79,7 @@ module rx_module#(
     end
   end
 
-  // RX iþlemleri
+  // RX islemleri
   always @(posedge clk) begin
     if (rst) begin
       rx_wr_ptr <= 0;
@@ -89,17 +89,15 @@ module rx_module#(
       rx_error_flag <= 0;
     end else begin
       if (rx_en) begin
-        // Baþlangýç bitini algýla
         if (~rx_start_bit && baud_pulse_rx && rx_in == 1'b0) begin
           clk_count_startbit <= 1;
         end else begin
-          clk_count_startbit <= 0; // Baþlangýç biti algýlandýktan sonra sýfýrla
+          clk_count_startbit <= 0; 
         end
 
-        // Veri bitlerini al
         if (rx_start_bit && baud_pulse_rx && rx_valid) begin
           clk_count_databit <= clk_count_databit + 1;
-          if (clk_count_databit == DATA_WIDTH) begin // Veri bitleri için DATA_WIDTH kullan
+          if (clk_count_databit == DATA_WIDTH) begin 
             rx_buffer[rx_wr_ptr] <= rx_in;
             rx_wr_ptr <= rx_wr_ptr + 1;
             if (rx_wr_ptr == FIFO_DEPTH) begin
@@ -109,34 +107,33 @@ module rx_module#(
             clk_count_databit <= 0;
           end
         end else begin
-          clk_count_databit <= 0; // Veri bitleri bitmiyorsa sýfýrla
+          clk_count_databit <= 0; 
         end
 
- // Durma bitini algýla
-if (rx_start_bit && ~baud_pulse_rx) begin
-  clk_count_stopbit <= clk_count_stopbit + 1;
-  if (clk_count_stopbit == 1) begin // 1 bitlik durma biti yeterli
+   if (rx_start_bit && ~baud_pulse_rx) begin
+    clk_count_stopbit <= clk_count_stopbit + 1;
+    if (clk_count_stopbit == 1) begin // 1 bitlik durma biti yeterli
     // Veri alýmý tamamlandý, hata yok
-    rx_error_flag <= 0;
-    rx_start_bit <= 0; // Bir sonraki karakter için hazýrla
-  end else if (clk_count_stopbit > 1) begin
+     rx_error_flag <= 0;
+     rx_start_bit <= 0; 
+   end else if (clk_count_stopbit > 1) begin
     // Fazla durma biti: hata
-    rx_error_flag <= 1;
-    rx_start_bit <= 0; // Bir sonraki karakter için hazýrla
-  end
-end
+     rx_error_flag <= 1;
+     rx_start_bit <= 0; 
+   end
+ end
 
 // RX çýkýþ verisi
-assign rx_data_out = (rx_data_valid) ? rx_buffer[rx_rd_ptr] : 8'bzzzzzzzz; //yüksek empedans
+ assign rx_data_out = (rx_data_valid) ? rx_buffer[rx_rd_ptr] : 8'bzzzzzzzz; //yüksek empedans
 
-// RX arabellek okuma iþlemi
-always @(posedge clk) begin
+// RX okuma iþlemi
+ always @(posedge clk) begin
   if (rx_en && rx_data_valid) begin
     rx_rd_ptr <= rx_rd_ptr + 1;
     if (rx_rd_ptr == FIFO_DEPTH) begin
       rx_rd_ptr <= 0;
     end
-    rx_data_valid <= 0; // Bir sonraki okunmaya hazýrlan
+    rx_data_valid <= 0; 
   end
 end
 

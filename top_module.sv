@@ -33,7 +33,7 @@ module top_module #(
   output reg rx_error_flag
 );
 
-  // TX modülü
+  // TX modulu
   wire tx_out;
   tx_module #(
     .DATA_WIDTH = DATA_WIDTH,
@@ -48,7 +48,7 @@ module top_module #(
     .tx_busy(tx_busy)
   );
 
-  // RX modülü
+  // RX modulu
   wire rx_en;
   rx_module #(
     .DATA_WIDTH = DATA_WIDTH,
@@ -57,14 +57,14 @@ module top_module #(
   ) rx_inst (
     .clk(clk),
     .rst(rst),
-    .rx_in(tx_out), // TX çýkýþýný RX giriþine baðladýk
+    .rx_in(tx_out), // TX cikisini RX girisine bagladýk
     .rx_en(rx_en),
     .rx_data_out(rx_data_out),
     .rx_buffer_empty(rx_buffer_empty), 
     .rx_error(rx_error_flag)
   );
 
-  // RX modülünü etkinleþtirmek için
+  // RX modulunu etkinlestirmek icin
   always @(posedge clk) begin
     if (rst) begin
       rx_en <= 1'b0;

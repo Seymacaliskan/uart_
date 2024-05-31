@@ -52,7 +52,7 @@ module tx_module#(
   reg [BAUD_DIV_MAX-1:0] baud_cnt_tx;
   reg baud_pulse_tx;
 
-  // Kenar algýlama için sayaçlarý sýfýrla
+  // Kenar algilama icin sayaclarý sifirladik
   always @(posedge clk) begin
     if (rst) begin
       clk_count_startbit <= 0;
@@ -62,7 +62,7 @@ module tx_module#(
     end
   end
 
-  // Baud hýzý güncelle
+  // Baud hizi güncelledik
   always @(posedge clk) begin
     if (rst) begin
       baud_cnt_tx <= 0;
@@ -71,7 +71,7 @@ module tx_module#(
         baud_cnt_tx <= baud_cnt_tx + 1;
         if (baud_cnt_tx == rx_en) begin // baud_rate_in ile deðiþtir
           baud_pulse_tx <= 1;
-          baud_cnt_tx <= 0; // Baud dönemi sýfýrla
+          baud_cnt_tx <= 0; // Baud dönemi sifirla
         end else begin
           baud_pulse_tx <= 0;
         end
@@ -87,12 +87,11 @@ module tx_module#(
       tx_start_bit <= 0;
       tx_data_valid <= 0;
       tx_busy <= 0;
-      tx_out <= 1'b1; // Baþlangýçta yüksek seviye (idle)
+      tx_out <= 1'b1; // Baslangicta yuksek seviye (idle)
     end else begin
       if (tx_en) begin
-        tx_busy <= 1; // Veri gönderilmeye baþlandý
+        tx_busy <= 1; // Veri gonderilmeye baslandi
 
-        // TX  boþsa, gönderilecek veriyi arabelleðe at
         if (tx_wr_ptr == tx_rd_ptr && tx_data_valid == 0) begin
           tx_buffer[tx_wr_ptr] <= tx_data_in;
           tx_wr_ptr <= tx_wr_ptr + 1;
@@ -102,40 +101,37 @@ module tx_module#(
           tx_data_valid <= 1;
         end
 
-        // Baþlangýç bitini gönder
         if (tx_data_valid && ~tx_start_bit && baud_pulse_tx) begin
           tx_out <= 1'b0;
           clk_count_startbit <= 1;
           tx_start_bit <= 1;
         end
-// Veri bitlerini gönder
-if (tx_start_bit && baud_pulse_tx && tx_data_valid) begin
-  clk_count_databit <= clk_count_databit + 1;
-  if (clk_count_databit == DATA_WIDTH) begin
-    tx_out <= tx_buffer[tx_rd_ptr];
-    tx_rd_ptr <= tx_rd_ptr + 1;
-    if (tx_rd_ptr == FIFO_DEPTH) begin
-      tx_rd_ptr <= 0;
+
+  if (tx_start_bit && baud_pulse_tx && tx_data_valid) begin
+    clk_count_databit <= clk_count_databit + 1;
+     if (clk_count_databit == DATA_WIDTH) begin
+      tx_out <= tx_buffer[tx_rd_ptr];
+      tx_rd_ptr <= tx_rd_ptr + 1;
+      if (tx_rd_ptr == FIFO_DEPTH) begin
+        tx_rd_ptr <= 0;
+      end
+      clk_count_databit <= 0; // Veri bitleri bitti, sýfýrla
+      tx_data_valid <= 0; // Bir sonraki veri bitine hazýrlansýn
     end
-    clk_count_databit <= 0; // Veri bitleri bitti, sýfýrla
-    tx_data_valid <= 0; // Bir sonraki veri bitine hazýrlansýn
   end
-end
 
-// Durma bitini gönder
-if (tx_start_bit && ~baud_pulse_tx) begin
-  clk_count_stopbit <= clk_count_stopbit + 1;
-  if (clk_count_stopbit == 1) begin // 1 bitlik durma biti yeterli
-    tx_out <= 1'b1; // Durma bitini gönder
-    clk_count_stopbit <= 0; // Durma biti bitti, sýfýrla
-    tx_start_bit <= 0; // Bir sonraki veri için hazýrlansýn
-    tx_busy <= 0; // Gönderme iþlemi tamamlandý
+  if (tx_start_bit && ~baud_pulse_tx) begin
+    clk_count_stopbit <= clk_count_stopbit + 1;
+    if (clk_count_stopbit == 1) begin // 1 bitlik durma biti yeterli
+     tx_out <= 1'b1; 
+      clk_count_stopbit <= 0; 
+      tx_start_bit <= 0; 
+      tx_busy <= 0; // Gönderme iþlemi tamamlandý
+    end
   end
-end
 
-// TX arabelleði boþsa ve veri gönderilmiyorsa, busy sinyali düþük olacak
-if (tx_wr_ptr == tx_rd_ptr && tx_data_valid == 0 && tx_busy == 1) begin
-  tx_busy <= 0;
-end
+  if (tx_wr_ptr == tx_rd_ptr && tx_data_valid == 0 && tx_busy == 1) begin
+    tx_busy <= 0;
+  end
 
 endmodule
